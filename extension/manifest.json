@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "PhishGuard Pro",
+  "version": "2.3.0",
+  "description": "Real-time phishing URL detection powered by ML. Scans every page you visit and alerts you to threats.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "webNavigation",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://localhost:5050/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16":  "icons/icon16.png",
+      "48":  "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "PhishGuard Pro"
+  },
+  "icons": {
+    "16":  "icons/icon16.png",
+    "48":  "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "options.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*", "badge.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

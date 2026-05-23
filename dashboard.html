@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhishGuard Pro</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0b0f;color:#e2e8f0;min-height:100vh}
+.shell{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:2rem;padding-bottom:1rem;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo{width:42px;height:42px;background:linear-gradient(135deg,#6366f1,#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.title{font-size:20px;font-weight:700}
+.title span{color:#818cf8}
+.sub{font-size:11px;color:#64748b;font-family:monospace}
+.status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;font-family:monospace}
+.dot{width:8px;height:8px;border-radius:50%;background:#10b981}
+.dot.off{background:#ef4444}
+
+/* Input */
+.input-wrap{margin-bottom:1.5rem}
+.lbl{font-size:11px;color:#64748b;letter-spacing:.08em;text-transform:uppercase;font-family:monospace;margin-bottom:.6rem}
+.row{display:flex;gap:10px}
+input[type=text]{flex:1;font-family:monospace;font-size:13px;background:#181b26;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px 16px;color:#e2e8f0;outline:none}
+input[type=text]:focus{border-color:#6366f1}
+input::placeholder{color:#475569}
+button.scan{padding:12px 24px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+button.scan:hover{background:#818cf8}
+button.scan:disabled{opacity:.4;cursor:default}
+
+/* Samples */
+.samples{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.smp{font-size:11px;font-family:monospace;padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;cursor:pointer}
+.smp:hover{border-color:#6366f1;color:#818cf8}
+.smp.p{border-color:rgba(239,68,68,.3);color:rgba(239,68,68,.7)}
+.smp.l{border-color:rgba(16,185,129,.3);color:rgba(16,185,129,.7)}
+
+/* Loading */
+.loading{display:none;align-items:center;gap:10px;padding:1rem;background:#181b26;border:1px solid rgba(255,255,255,.08);border-radius:10px;margin-bottom:1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.load-txt{font-size:12px;font-family:monospace;color:#64748b}
+
+/* Result card */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.result{display:none;animation:fadeIn .3s ease}
+.verdict{border-radius:12px;padding:1.25rem;border:1px solid;display:flex;align-items:flex-start;gap:1rem;margin-bottom:1rem}
+.verdict.HIGH{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3)}
+.verdict.MEDIUM{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3)}
+.verdict.LOW{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3)}
+.v-icon{font-size:26px;flex-shrink:0;margin-top:2px}
+.v-body{flex:1;min-width:0}
+.v-title{font-size:18px;font-weight:700}
+.HIGH .v-title{color:#ef4444}
+.MEDIUM .v-title{color:#f59e0b}
+.LOW .v-title{color:#10b981}
+.v-url{font-family:monospace;font-size:11px;color:#64748b;margin-top:4px;word-break:break-all}
+.v-meta{display:flex;gap:1rem;margin-top:.6rem;flex-wrap:wrap}
+.vm{font-size:12px;color:#475569}
+.vm b{font-family:monospace;color:#e2e8f0}
+.v-prob{font-family:monospace;font-size:28px;font-weight:700;flex-shrink:0}
+.HIGH .v-prob{color:#ef4444}
+.MEDIUM .v-prob{color:#f59e0b}
+.LOW .v-prob{color:#10b981}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1rem}
+.tab{padding:6px 14px;border-radius:8px;font-size:12px;font-family:monospace;cursor:pointer;border:1px solid transparent;color:#64748b}
+.tab.on{background:#1f2235;border-color:rgba(255,255,255,.1);color:#e2e8f0}
+.panel{display:none}
+.panel.on{display:block}
+
+/* Cards */
+.card{background:#181b26;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1rem;margin-bottom:.75rem}
+.card-title{font-size:10px;color:#64748b;letter-spacing:.1em;text-transform:uppercase;font-family:monospace;margin-bottom:.75rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+
+/* Signals */
+.sig{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.sig:last-child{border-bottom:none}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.sdot.danger{background:#ef4444;box-shadow:0 0 5px rgba(239,68,68,.5)}
+.sdot.warning{background:#f59e0b}
+.sdot.safe{background:#10b981}
+.sdot.info{background:#3b82f6}
+.stxt{font-size:12px;color:#94a3b8;line-height:1.5}
+
+/* Feature bars */
+.fb{margin-bottom:10px}
+.fb:last-child{margin-bottom:0}
+.fb-hdr{display:flex;justify-content:space-between;margin-bottom:3px}
+.fb-name{font-size:11px;color:#94a3b8;font-family:monospace}
+.fb-val{font-size:11px;font-weight:600;font-family:monospace}
+.fb-track{height:3px;background:#1f2235;border-radius:2px;overflow:hidden}
+.fb-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.fb-fill.d{background:#ef4444}
+.fb-fill.w{background:#f59e0b}
+.fb-fill.s{background:#10b981}
+
+/* Typosquat */
+.ts-box{border-radius:8px;padding:.9rem;border:1px solid rgba(255,255,255,.07);background:#1f2235}
+.ts-box.hit{border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.05)}
+.ts-hdr{display:flex;align-items:center;gap:10px;margin-bottom:.5rem}
+.ts-ttl{font-size:14px;font-weight:600}
+.ts-g{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:.75rem}
+.ts-m{background:#181b26;border-radius:8px;padding:8px;text-align:center}
+.ts-mv{font-size:16px;font-weight:700;font-family:monospace}
+.ts-ml{font-size:10px;color:#64748b;margin-top:2px}
+
+/* Top features */
+.tf-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.tf-row:last-child{border-bottom:none}
+.tf-rank{font-size:10px;color:#64748b;font-family:monospace;width:18px}
+.tf-name{font-family:monospace;font-size:12px;flex:1}
+.tf-imp{font-family:monospace;font-size:11px;color:#818cf8}
+.tf-val{font-family:monospace;font-size:11px;color:#64748b}
+
+/* Feedback */
+.fb-btns{display:flex;gap:8px;margin-top:.75rem}
+.fb-btn{flex:1;padding:7px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#1f2235;color:#64748b;font-size:11px;font-family:monospace;cursor:pointer;text-align:center}
+.fb-btn:hover{border-color:#6366f1;color:#818cf8}
+.fb-ok{margin-top:.5rem;font-size:12px;color:#10b981;font-family:monospace;display:none}
+
+/* Stats page */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.stat-card{background:#1f2235;border-radius:10px;padding:1rem;text-align:center}
+.stat-val{font-size:22px;font-weight:700;font-family:monospace}
+.stat-val.g{color:#10b981}
+.stat-val.r{color:#ef4444}
+.stat-val.b{color:#3b82f6}
+.stat-val.a{color:#818cf8}
+.stat-lbl{font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
+
+/* History */
+.h-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer}
+.h-row:last-child{border-bottom:none}
+.h-row:hover{opacity:.8}
+.h-badge{font-size:10px;font-family:monospace;padding:2px 8px;border-radius:20px;border:1px solid;flex-shrink:0}
+.h-badge.HIGH{color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.1)}
+.h-badge.MEDIUM{color:#f59e0b;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.1)}
+.h-badge.LOW{color:#10b981;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.1)}
+.h-url{font-family:monospace;font-size:11px;color:#94a3b8;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-prob{font-family:monospace;font-size:12px;font-weight:600}
+
+/* Nav */
+.nav{display:flex;gap:4px;margin-bottom:1.5rem;background:#10121a;padding:5px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+.nav-tab{flex:1;text-align:center;padding:7px;border-radius:7px;font-size:12px;font-family:monospace;cursor:pointer;color:#64748b}
+.nav-tab.on{background:#1f2235;color:#e2e8f0;border:1px solid rgba(255,255,255,.08)}
+.page{display:none}
+.page.on{display:block}
+
+/* API offline banner */
+.offline{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.75rem 1rem;font-size:12px;font-family:monospace;color:#fca5a5;margin-bottom:1rem;display:none}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🛡</div>
+    <div>
+      <div class="title">PhishGuard<span>Pro</span></div>
+      <div class="sub">ML Threat Intelligence v2.3 · 35 Features</div>
+    </div>
+    <div class="status" id="apiStatus">
+      <div class="dot off" id="apiDot"></div>
+      <span id="apiTxt">Connecting to API…</span>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav">
+    <div class="nav-tab on" onclick="pg('scan')">🔍 Scan</div>
+    <div class="nav-tab" onclick="pg('history')">📋 History</div>
+    <div class="nav-tab" onclick="pg('stats')">📊 Analytics</div>
+  </div>
+
+  <!-- ── SCAN PAGE ── -->
+  <div class="page on" id="page-scan">
+
+    <div class="offline" id="offlineBanner">
+      ⚠ API offline — using built-in JS classifier (start: python app.py)
+    </div>
+
+    <div class="input-wrap">
+      <div class="lbl">// Enter URL to analyze</div>
+      <div class="row">
+        <input type="text" id="urlInput" placeholder="https://example.com/login" />
+        <button class="scan" id="scanBtn" onclick="analyze()">Analyze</button>
+      </div>
+      <div class="samples">
+        <span style="font-size:11px;color:#475569;font-family:monospace">try:</span>
+        <button class="smp p" onclick="s('http://paypal-secure.login-verify.xyz/account/confirm?token=abc123')">paypal-secure.xyz</button>
+        <button class="smp l" onclick="s('https://google.com/search?q=python')">google.com</button>
+        <button class="smp p" onclick="s('http://arnazon.com/billing/update')">arnazon.com (typo)</button>
+        <button class="smp l" onclick="s('https://github.com/anthropics/claude')">github.com</button>
+        <button class="smp p" onclick="s('http://192.168.1.1/admin/login')">IP attack</button>
+        <button class="smp p" onclick="s('http://apple-id-suspended.online/account/unlock')">apple suspended</button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <span class="load-txt" id="loadTxt">Analyzing URL…</span>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+
+      <!-- Verdict -->
+      <div class="verdict" id="vCard">
+        <div class="v-icon" id="vIcon">⚠</div>
+        <div class="v-body">
+          <div class="v-title" id="vTitle">—</div>
+          <div class="v-url" id="vUrl">—</div>
+          <div class="v-meta">
+            <div class="vm">Risk: <b id="vTier">—</b></div>
+            <div class="vm">Latency: <b id="vLat">—</b></div>
+            <div class="vm">Features: <b>35</b></div>
+          </div>
+        </div>
+        <div class="v-prob" id="vProb">—</div>
+      </div>
+
+      <!-- Result tabs -->
+      <div class="tabs">
+        <div class="tab on"  onclick="tb('signals')">Signals</div>
+        <div class="tab"     onclick="tb('features')">Features</div>
+        <div class="tab"     onclick="tb('typosquat')">Typosquat</div>
+        <div class="tab"     onclick="tb('top')">Top Indicators</div>
+        <div class="tab"     onclick="tb('feedback')">Feedback</div>
+      </div>
+
+      <div class="panel on" id="panel-signals">
+        <div class="card"><div class="card-title">// threat signals</div><div id="sigList"></div></div>
+      </div>
+
+      <div class="panel" id="panel-features">
+        <div class="g2">
+          <div class="card"><div class="card-title">// url structure</div><div id="fUrl"></div></div>
+          <div class="card"><div class="card-title">// host analysis</div><div id="fHost"></div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-title">// semantic</div><div id="fSem"></div></div>
+          <div class="card"><div class="card-title">// path & query</div><div id="fPath"></div></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-typosquat">
+        <div class="card"><div class="card-title">// typosquatting analysis</div><div id="tsPanel"></div></div>
+      </div>
+
+      <div class="panel" id="panel-top">
+        <div class="card"><div class="card-title">// top model contributors</div><div id="topList"></div></div>
+      </div>
+
+      <div class="panel" id="panel-feedback">
+        <div class="card">
+          <div class="card-title">// submit correction</div>
+          <p style="font-size:13px;color:#64748b;margin-bottom:.5rem">Was this prediction correct? Help improve the model.</p>
+          <div class="fb-btns">
+            <button class="fb-btn" onclick="fb(0)">✓ It's Legitimate (False Positive)</button>
+            <button class="fb-btn" onclick="fb(1)">✗ It IS Phishing (False Negative)</button>
+            <button class="fb-btn" onclick="fb(-1)">✓ Correct — Confirmed</button>
+          </div>
+          <div class="fb-ok" id="fbOk"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── HISTORY PAGE ── -->
+  <div class="page" id="page-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:11px;color:#64748b;font-family:monospace">// scan history (this session)</div>
+      <button onclick="hist=[];renderHist()" style="font-size:11px;font-family:monospace;padding:4px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:#1f2235;color:#64748b;cursor:pointer">Clear</button>
+    </div>
+    <div class="card"><div id="histList"><div style="font-size:13px;color:#475569">No scans yet.</div></div></div>
+  </div>
+
+  <!-- ── STATS PAGE ── -->
+  <div class="page" id="page-stats">
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="g2">
+      <div class="card"><div class="card-title">// tier breakdown</div><div id="tierBd"></div></div>
+      <div class="card"><div class="card-title">// model drift</div><div id="driftPanel"></div></div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<script>
+const API = 'http://localhost:5050';
+let hist = [], cur = null, apiOk = false, scanned = 0;
+
+const STEPS = [
+  'Parsing URL structure…','Computing entropy…',
+  'Running typosquat detector…','Ensemble classification…','Done!'
+];
+
+// ── Navigation ─────────────────────────────────────────
+function pg(name) {
+  ['scan','history','stats'].forEach((n,i) => {
+    document.querySelectorAll('.nav-tab')[i].classList.toggle('on', n===name);
+    document.getElementById('page-'+n).classList.toggle('on', n===name);
+  });
+  if (name==='history') renderHist();
+  if (name==='stats')   loadStats();
+}
+
+function tb(name) {
+  ['signals','features','typosquat','top','feedback'].forEach((n,i) => {
+    document.querySelectorAll('.tab')[i].classList.toggle('on', n===name);
+    document.getElementById('panel-'+n).classList.toggle('on', n===name);
+  });
+}
+
+function s(url) { document.getElementById('urlInput').value = url; }
+
+// ── API health check ───────────────────────────────────
+async function checkApi() {
+  try {
+    const r = await fetch(API+'/health', {signal: AbortSignal.timeout(2000)});
+    apiOk = r.ok;
+  } catch(e) { apiOk = false; }
+  document.getElementById('apiDot').className = 'dot' + (apiOk ? '' : ' off');
+  document.getElementById('apiTxt').textContent = apiOk ? 'API Online ✓' : 'API Offline (JS fallback)';
+  document.getElementById('offlineBanner').style.display = apiOk ? 'none' : 'block';
+}
+
+// ── Main analyze ───────────────────────────────────────
+async function analyze() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { document.getElementById('urlInput').focus(); return; }
+
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('result').style.display = 'none';
+
+  let si = 0;
+  const iv = setInterval(() => {
+    document.getElementById('loadTxt').textContent = STEPS[si % STEPS.length]; si++;
+  }, 300);
+
+  let data = null;
+  if (apiOk) {
+    try {
+      const res = await fetch(API+'/predict', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({url}),
+        signal: AbortSignal.timeout(10000)
+      });
+      if (res.ok) data = await res.json();
+    } catch(e) { apiOk = false; }
+  }
+
+  clearInterval(iv);
+  if (!data) data = jsClassify(url);
+
+  cur = data;
+  hist.push(data);
+  scanned++;
+
+  renderResult(data);
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('scanBtn').disabled = false;
+}
+
+// ── Render result ──────────────────────────────────────
+function renderResult(d) {
+  const tier = d.risk_tier;
+  const c = document.getElementById('vCard');
+  c.className = 'verdict ' + tier;
+  document.getElementById('vIcon').textContent  = tier==='HIGH'?'⚠':tier==='MEDIUM'?'?':'✓';
+  document.getElementById('vTitle').textContent = d.verdict;
+  document.getElementById('vUrl').textContent   = d.url;
+  document.getElementById('vTier').textContent  = tier;
+  document.getElementById('vLat').textContent   = d.latency_ms+'ms';
+  document.getElementById('vProb').textContent  = (d.probability*100).toFixed(1)+'%';
+
+  // Signals
+  const dc = {danger:'danger',warning:'warning',safe:'safe',info:'info'};
+  document.getElementById('sigList').innerHTML = (d.signals||[]).map(s=>
+    `<div class="sig"><div class="sdot ${dc[s.type]||'info'}"></div><span class="stxt">${s.msg}</span></div>`
+  ).join('') || '<div style="color:#475569;font-size:12px">No signals.</div>';
+
+  // Feature bar groups
+  const f = d.all_features || {};
+  const bar = (id, defs) => {
+    document.getElementById(id).innerHTML = defs.map(({k,l,max,inv}) => {
+      const v = f[k]??0, pct = Math.min(v/max*100,100);
+      const cls = inv ? (v>=.5?'s':'d') : (pct>65?'d':pct>35?'w':'s');
+      const disp = typeof v==='number' && v%1!==0 ? v.toFixed(3) : v;
+      return `<div class="fb"><div class="fb-hdr"><span class="fb-name">${l}</span><span class="fb-val">${disp}</span></div>
+        <div class="fb-track"><div class="fb-fill ${cls}" style="width:${pct.toFixed(1)}%"></div></div></div>`;
+    }).join('');
+  };
+  bar('fUrl',[
+    {k:'url_length',l:'URL Length',max:200},{k:'url_entropy',l:'Entropy',max:6},
+    {k:'num_dots',l:'Dots',max:10},{k:'num_hyphens',l:'Hyphens',max:10},
+    {k:'num_at',l:'@ chars',max:3},{k:'url_digit_ratio',l:'Digit Ratio',max:1},
+  ]);
+  bar('fHost',[
+    {k:'host_length',l:'Host Length',max:60},{k:'host_entropy',l:'Host Entropy',max:5},
+    {k:'num_subdomains',l:'Subdomains',max:5},{k:'has_ip',l:'IP as Host',max:1},
+    {k:'suspicious_tld',l:'Suspicious TLD',max:1},{k:'host_vowel_ratio',l:'Vowel Ratio',max:1,inv:true},
+  ]);
+  bar('fSem',[
+    {k:'sensitive_keyword_count',l:'Keywords',max:6},{k:'brand_in_subdomain',l:'Brand/Sub',max:1},
+    {k:'brand_in_domain',l:'Brand/Domain',max:1},{k:'typosquat_detected',l:'Typosquat',max:1},
+    {k:'known_legit_domain',l:'Known Legit',max:1,inv:true},{k:'is_https',l:'HTTPS',max:1,inv:true},
+  ]);
+  bar('fPath',[
+    {k:'path_length',l:'Path Length',max:100},{k:'query_length',l:'Query Length',max:150},
+    {k:'num_query_params',l:'Params',max:10},{k:'has_encoded_chars',l:'Encoded',max:1},
+    {k:'num_percent',l:'% chars',max:10},{k:'num_slashes',l:'Slashes',max:10},
+  ]);
+
+  // Typosquat panel
+  const ts = f.typosquat_score||0, td = f.typosquat_detected||0;
+  document.getElementById('tsPanel').innerHTML = `
+    <div class="ts-box ${td?'hit':''}">
+      <div class="ts-hdr">
+        <span style="font-size:22px">${td?'⚠':'✓'}</span>
+        <div class="ts-ttl" style="color:${td?'#f59e0b':'#10b981'}">${td?'Typosquatting Detected':'No Typosquatting Detected'}</div>
+      </div>
+      <div style="font-size:12px;color:#64748b">${td?'Domain closely resembles a known brand — possible impersonation':'Domain does not closely resemble any known brand'}</div>
+      <div class="ts-g">
+        <div class="ts-m"><div class="ts-mv" style="color:${ts>0.5?'#f59e0b':'#10b981'}">${(ts*100).toFixed(1)}%</div><div class="ts-ml">Similarity</div></div>
+        <div class="ts-m"><div class="ts-mv">${td?'Yes':'No'}</div><div class="ts-ml">Detected</div></div>
+        <div class="ts-m"><div class="ts-mv" style="color:${td?'#ef4444':'#10b981'}">${td?'HIGH':'LOW'}</div><div class="ts-ml">Risk Level</div></div>
+      </div>
+    </div>`;
+
+  // Top features
+  document.getElementById('topList').innerHTML = (d.top_features||[]).map((f,i)=>
+    `<div class="tf-row"><span class="tf-rank">${i+1}.</span>
+    <span class="tf-name">${f.name}</span>
+    <span class="tf-imp">imp:${(f.importance*100).toFixed(1)}%</span>
+    <span class="tf-val">val:${typeof f.value==='number'&&f.value%1!==0?f.value.toFixed(3):f.value}</span></div>`
+  ).join('');
+
+  document.getElementById('fbOk').style.display = 'none';
+  tb('signals');
+}
+
+// ── Feedback ───────────────────────────────────────────
+async function fb(trueLabel) {
+  if (!cur) return;
+  const ml = cur.prediction;
+  const tl = trueLabel === -1 ? ml : trueLabel;
+  try {
+    await fetch(API+'/feedback', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url:cur.url, model_label:ml, true_label:tl, prediction_id:cur.prediction_id})
+    });
+  } catch(e) {}
+  const el = document.getElementById('fbOk');
+  el.textContent = trueLabel===-1 ? '✓ Confirmed correct — thank you!' :
+    trueLabel===0 ? '✓ Marked as false positive — will improve model!' :
+    '✓ Marked as missed phishing — will improve model!';
+  el.style.display = 'block';
+}
+
+// ── History ────────────────────────────────────────────
+function renderHist() {
+  const el = document.getElementById('histList');
+  if (!hist.length) { el.innerHTML = '<div style="font-size:13px;color:#475569">No scans yet.</div>'; return; }
+  el.innerHTML = [...hist].reverse().map(h =>
+    `<div class="h-row" onclick="s('${h.url.replace(/'/g,"\\'")}');pg('scan')">
+      <span class="h-badge ${h.risk_tier}">${h.risk_tier}</span>
+      <span class="h-url">${h.url}</span>
+      <span class="h-prob" style="color:${h.risk_tier==='HIGH'?'#ef4444':h.risk_tier==='MEDIUM'?'#f59e0b':'#10b981'}">${(h.probability*100).toFixed(1)}%</span>
+    </div>`
+  ).join('');
+}
+
+// ── Analytics ──────────────────────────────────────────
+async function loadStats() {
+  const sg = document.getElementById('statGrid');
+  if (!apiOk) {
+    sg.innerHTML = '<div style="color:#475569;font-size:13px;grid-column:1/-1;font-family:monospace">Start python app.py to see live analytics.</div>';
+    return;
+  }
+  try {
+    const [sr, dr] = await Promise.all([fetch(API+'/stats?days=7'), fetch(API+'/drift')]);
+    const st = await sr.json(), dr2 = await dr.json();
+    sg.innerHTML = [
+      {v:st.total_scans,l:'Total Scans',c:'a'},
+      {v:st.phishing_detected,l:'Phishing',c:'r'},
+      {v:st.legitimate,l:'Legitimate',c:'g'},
+      {v:st.false_positives||0,l:'False Positives',c:'b'},
+    ].map(m=>`<div class="stat-card"><div class="stat-val ${m.c}">${m.v??0}</div><div class="stat-lbl">${m.l}</div></div>`).join('');
+    const tb2 = st.tier_breakdown||{};
+    document.getElementById('tierBd').innerHTML = ['HIGH','MEDIUM','LOW'].map(t=>
+      `<div class="h-row"><span class="h-badge ${t}">${t}</span>
+       <span class="h-url">${tb2[t]||0} scans</span>
+       <span class="h-prob" style="color:${t==='HIGH'?'#ef4444':t==='MEDIUM'?'#f59e0b':'#10b981'}">${st.total_scans?Math.round((tb2[t]||0)/st.total_scans*100):0}%</span></div>`
+    ).join('');
+    const dd = dr2.drift_detected;
+    document.getElementById('driftPanel').innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:.75rem">
+        <span style="font-size:20px">${dd?'⚠':'✓'}</span>
+        <span style="font-weight:600;color:${dd?'#f59e0b':'#10b981'}">${dd?'Drift Detected — Retrain Recommended':'No Drift Detected'}</span>
+      </div>
+      <div style="font-size:12px;color:#64748b;font-family:monospace">Error rate: ${dr2.error_rate??'N/A'} | Threshold: ${dr2.threshold??0.15}</div>
+      ${dd?'<div style="margin-top:.5rem;font-size:12px;font-family:monospace;color:#f59e0b">Run: python retrain.py</div>':''}`;
+  } catch(e) {
+    sg.innerHTML = '<div style="color:#475569;font-size:13px;grid-column:1/-1;font-family:monospace">Could not load stats.</div>';
+  }
+}
+
+// ── JS fallback classifier (no API needed) ─────────────
+function jsClassify(url) {
+  function ent(s){const f={};for(const c of s)f[c]=(f[c]||0)+1;return -Object.values(f).reduce((a,v)=>a+(v/s.length)*Math.log2(v/s.length),0)}
+  let p; try{p=new URL(url.includes('://')?url:'http://'+url)}catch(e){p={hostname:'?',pathname:'/',search:'',protocol:'http:'}}
+  const host=p.hostname, pts=host.split('.'), tld=pts[pts.length-1], dom=pts[pts.length-2]||'', subs=pts.length-2;
+  const sus=new Set(['xyz','tk','ml','ga','cf','gq','pw','top','click','live','site','online','icu','buzz']);
+  const legit=new Set(['google','github','microsoft','apple','amazon','netflix','facebook','twitter','linkedin','reddit','stackoverflow','stripe','wikipedia','dropbox','slack','zoom','spotify']);
+  const brands=new Set(['paypal','apple','google','amazon','microsoft','netflix','facebook','instagram','twitter','chase','ebay','walmart']);
+  const kwds=['login','signin','verify','secure','account','update','confirm','banking','payment','auth','recover','reset','suspend','validate'];
+  let risk=0;
+  if(url.length>80)risk+=15; if(ent(url)>4.2)risk+=18; if(subs>=3)risk+=20;
+  if(sus.has(tld))risk+=25; if([...brands].some(b=>host.includes(b)&&!host.endsWith(b+'.com')))risk+=25;
+  if(host.match(/^\d{1,3}(\.\d{1,3}){3}$/))risk+=30;
+  const kc=kwds.filter(k=>url.toLowerCase().includes(k)).length; risk+=kc*8;
+  if(legit.has(dom))risk=Math.max(risk-40,5);
+  risk=Math.min(risk,97);
+  const tier=risk>=60?'HIGH':risk>=35?'MEDIUM':'LOW';
+  const f={url_length:url.length,url_entropy:parseFloat(ent(url).toFixed(2)),num_dots:url.split('.').length-1,
+    num_hyphens:(url.match(/-/g)||[]).length,num_at:(url.match(/@/g)||[]).length,
+    url_digit_ratio:parseFloat(((url.match(/\d/g)||[]).length/url.length).toFixed(3)),
+    host_length:host.length,host_entropy:parseFloat(ent(host).toFixed(2)),num_subdomains:subs,
+    host_digit_ratio:0,host_vowel_ratio:.3,has_ip:host.match(/^\d+\.\d+\.\d+\.\d+$/)?1:0,
+    suspicious_tld:sus.has(tld)?1:0,domain_length:dom.length,domain_entropy:parseFloat(ent(dom).toFixed(2)),
+    subdomain_length:pts.slice(0,-2).join('.').length,brand_in_subdomain:[...brands].some(b=>pts.slice(0,-2).join('.').includes(b))?1:0,
+    path_length:p.pathname.length,query_length:(p.search||'').length,
+    num_query_params:(p.search||'').split('&').length,has_encoded_chars:url.includes('%')?1:0,
+    sensitive_keyword_count:kc,brand_in_domain:brands.has(dom)?1:0,
+    brand_in_path:[...brands].some(b=>p.pathname.includes(b))?1:0,
+    is_https:p.protocol==='https:'?1:0,known_legit_domain:legit.has(dom)?1:0,
+    typosquat_score:0,typosquat_detected:0,num_percent:(url.match(/%/g)||[]).length,
+    num_slashes:(url.match(/\//g)||[]).length,num_question:url.includes('?')?1:0,
+    num_equals:(url.match(/=/g)||[]).length,num_ampersand:(url.match(/&/g)||[]).length,
+    num_underscores:(url.match(/_/g)||[]).length,longest_word:Math.max(...(url.match(/[a-zA-Z]+/g)||['']).map(w=>w.length)),
+    domain_entropy:parseFloat(ent(dom).toFixed(2)),
+  };
+  const sigs=[];
+  if(f.has_ip)           sigs.push({type:'danger',  msg:'IP address used as hostname'});
+  if(f.brand_in_subdomain)sigs.push({type:'danger', msg:'Brand name in subdomain (impersonation)'});
+  if(f.suspicious_tld)   sigs.push({type:'danger',  msg:'High-risk TLD detected (.'+tld+')'});
+  if(kc>=2)              sigs.push({type:'warning', msg:`${kc} sensitive keywords in URL`});
+  if(f.url_entropy>4.2)  sigs.push({type:'warning', msg:`High entropy (${f.url_entropy.toFixed(2)}) — possibly obfuscated`});
+  if(f.num_at>0)         sigs.push({type:'danger',  msg:'@ character — may redirect to attacker'});
+  if(f.known_legit_domain)sigs.push({type:'safe',   msg:'Domain matches known legitimate site'});
+  if(!sigs.length)       sigs.push({type:'safe',    msg:'No major phishing indicators detected'});
+  sigs.push({type:'info', msg:'JS fallback mode — start python app.py for full ML predictions'});
+  return {url, verdict:tier==='HIGH'?'Phishing Detected':tier==='MEDIUM'?'Suspicious URL':'Likely Legitimate',
+    risk_tier:tier, probability:risk/100, prediction:risk>=45?1:0, latency_ms:1,
+    signals:sigs, prediction_id:null,
+    top_features:[
+      {name:'known_legit_domain',importance:.2363,value:f.known_legit_domain},
+      {name:'is_https',importance:.2305,value:f.is_https},
+      {name:'sensitive_keyword_count',importance:.0911,value:kc},
+      {name:'suspicious_tld',importance:.0796,value:f.suspicious_tld},
+      {name:'typosquat_score',importance:.0388,value:0},
+    ],
+    all_features:f};
+}
+
+// ── Init ───────────────────────────────────────────────
+document.getElementById('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') analyze(); });
+checkApi();
+setInterval(checkApi, 10000);
+</script>
+</body>
+</html>

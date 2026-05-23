@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PhishGuard Pro — Settings</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0D0F1A;color:#E2E8F0;font-size:13px;padding:24px;min-width:480px}
+h1{font-size:20px;font-weight:700;color:#fff;margin-bottom:4px}
+.sub{color:#64748B;font-size:12px;margin-bottom:24px}
+.card{background:#141623;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:18px;margin-bottom:14px}
+.card-title{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6366F1;font-family:'Courier New',monospace;margin-bottom:14px}
+.row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+.row:last-child{border-bottom:none}
+.row-label{color:#CBD5E1;font-size:13px}
+.row-desc{color:#475569;font-size:11px;margin-top:2px}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#1C1F31;border-radius:22px;transition:background 0.2s}
+.slider::before{content:"";position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#475569;border-radius:50%;transition:all 0.2s}
+input:checked+.slider{background:#6366F1}
+input:checked+.slider::before{transform:translateX(18px);background:white}
+input[type=text],input[type=number]{background:#1C1F31;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;color:#E2E8F0;font-size:12px;font-family:'Courier New',monospace;width:220px}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:#6366F1}
+.save-btn{background:#6366F1;color:white;border:none;padding:10px 24px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px;transition:background 0.2s}
+.save-btn:hover{background:#818CF8}
+.saved-msg{color:#10B981;font-size:12px;margin-left:12px;display:none}
+textarea{background:#1C1F31;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;color:#E2E8F0;font-size:12px;font-family:'Courier New',monospace;width:100%;resize:vertical;min-height:70px;margin-top:8px}
+textarea:focus{outline:none;border-color:#6366F1}
+</style>
+</head>
+<body>
+<h1>🛡 PhishGuard Pro</h1>
+<div class="sub">Extension settings — changes take effect immediately</div>
+
+<div class="card">
+  <div class="card-title">// API Connection</div>
+  <div class="row">
+    <div>
+      <div class="row-label">API Server URL</div>
+      <div class="row-desc">Local Flask server address</div>
+    </div>
+    <input type="text" id="apiUrl" placeholder="http://localhost:5050">
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">// Scanning</div>
+  <div class="row">
+    <div><div class="row-label">Enable scanning</div><div class="row-desc">Scan all pages automatically</div></div>
+    <label class="toggle"><input type="checkbox" id="scanEnabled"><span class="slider"></span></label>
+  </div>
+  <div class="row">
+    <div><div class="row-label">Auto-block HIGH risk</div><div class="row-desc">Redirect to blocked page for phishing</div></div>
+    <label class="toggle"><input type="checkbox" id="autoBlockHigh"><span class="slider"></span></label>
+  </div>
+  <div class="row">
+    <div><div class="row-label">Cache results</div><div class="row-desc">Avoid rescanning same URL (10 min TTL)</div></div>
+    <label class="toggle"><input type="checkbox" id="cacheEnabled"><span class="slider"></span></label>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">// Notifications</div>
+  <div class="row">
+    <div><div class="row-label">Notify on HIGH risk</div><div class="row-desc">Browser notification for phishing</div></div>
+    <label class="toggle"><input type="checkbox" id="notifyHigh"><span class="slider"></span></label>
+  </div>
+  <div class="row">
+    <div><div class="row-label">Notify on MEDIUM risk</div><div class="row-desc">Browser notification for suspicious</div></div>
+    <label class="toggle"><input type="checkbox" id="notifyMedium"><span class="slider"></span></label>
+  </div>
+  <div class="row">
+    <div><div class="row-label">Show badge</div><div class="row-desc">Risk badge on extension icon</div></div>
+    <label class="toggle"><input type="checkbox" id="showBadge"><span class="slider"></span></label>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">// Whitelist</div>
+  <div class="row-label" style="margin-bottom:6px">Whitelisted domains (one per line)</div>
+  <div class="row-desc" style="margin-bottom:8px">These domains will never be scanned</div>
+  <textarea id="whitelist" placeholder="intranet.company.com&#10;localhost&#10;staging.myapp.com"></textarea>
+</div>
+
+<button class="save-btn" onclick="save()">Save Settings</button>
+<span class="saved-msg" id="savedMsg">✓ Saved</span>
+
+<script>
+const DEFAULTS = {
+  apiUrl: "http://localhost:5050", scanEnabled: true, notifyHigh: true,
+  notifyMedium: false, showBadge: true, autoBlockHigh: false,
+  cacheEnabled: true, whitelistedDomains: [],
+};
+
+function load() {
+  chrome.storage.sync.get(DEFAULTS, (s) => {
+    document.getElementById("apiUrl").value        = s.apiUrl;
+    document.getElementById("scanEnabled").checked = s.scanEnabled;
+    document.getElementById("notifyHigh").checked  = s.notifyHigh;
+    document.getElementById("notifyMedium").checked= s.notifyMedium;
+    document.getElementById("showBadge").checked   = s.showBadge;
+    document.getElementById("autoBlockHigh").checked= s.autoBlockHigh;
+    document.getElementById("cacheEnabled").checked= s.cacheEnabled;
+    document.getElementById("whitelist").value     = (s.whitelistedDomains || []).join("\n");
+  });
+}
+
+function save() {
+  const domains = document.getElementById("whitelist").value
+    .split("\n").map(d => d.trim()).filter(Boolean);
+  chrome.storage.sync.set({
+    apiUrl:             document.getElementById("apiUrl").value.trim(),
+    scanEnabled:        document.getElementById("scanEnabled").checked,
+    notifyHigh:         document.getElementById("notifyHigh").checked,
+    notifyMedium:       document.getElementById("notifyMedium").checked,
+    showBadge:          document.getElementById("showBadge").checked,
+    autoBlockHigh:      document.getElementById("autoBlockHigh").checked,
+    cacheEnabled:       document.getElementById("cacheEnabled").checked,
+    whitelistedDomains: domains,
+  }, () => {
+    const msg = document.getElementById("savedMsg");
+    msg.style.display = "inline";
+    setTimeout(() => { msg.style.display = "none"; }, 2000);
+  });
+}
+
+load();
+</script>
+</body>
+</html>

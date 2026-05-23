@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PhishGuard Pro</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0D0F1A;
+  --bg2:     #141623;
+  --bg3:     #1C1F31;
+  --border:  rgba(255,255,255,0.07);
+  --text:    #E2E8F0;
+  --muted:   #64748B;
+  --accent:  #6366F1;
+  --danger:  #EF4444;
+  --warning: #F59E0B;
+  --success: #10B981;
+  --mono:    'Courier New', monospace;
+}
+body {
+  width: 340px; min-height: 420px;
+  background: var(--bg); color: var(--text);
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 13px;
+}
+
+/* Header */
+.header {
+  padding: 14px 16px 12px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, #6366F1, #A78BFA);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+}
+.logo-text { font-weight: 700; font-size: 15px; }
+.logo-sub  { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.scan-toggle {
+  margin-left: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.toggle-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.toggle { position: relative; width: 36px; height: 20px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; inset: 0;
+  background: var(--bg3); border-radius: 20px;
+  transition: background 0.2s;
+}
+.slider::before {
+  content: ""; position: absolute;
+  width: 14px; height: 14px; left: 3px; bottom: 3px;
+  background: var(--muted); border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+input:checked + .slider { background: var(--accent); }
+input:checked + .slider::before { transform: translateX(16px); background: white; }
+
+/* Verdict */
+.verdict-section { padding: 14px 16px; }
+.verdict-card {
+  border-radius: 10px; padding: 14px;
+  border: 1px solid; display: flex; align-items: center; gap: 12px;
+}
+.verdict-card.HIGH   { background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.3);  }
+.verdict-card.MEDIUM { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.3); }
+.verdict-card.LOW    { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); }
+.verdict-card.loading{ background: rgba(99,102,241,0.08);border-color: rgba(99,102,241,0.3); }
+.verdict-card.error  { background: rgba(100,116,139,0.1);border-color: rgba(100,116,139,0.3);}
+.v-icon { font-size: 24px; flex-shrink: 0; }
+.v-body { flex: 1; min-width: 0; }
+.v-title { font-weight: 700; font-size: 15px; }
+.verdict-card.HIGH   .v-title { color: var(--danger);  }
+.verdict-card.MEDIUM .v-title { color: var(--warning); }
+.verdict-card.LOW    .v-title { color: var(--success); }
+.verdict-card.loading .v-title{ color: var(--accent);  }
+.v-url  { font-size: 10px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v-prob { font-family: var(--mono); font-size: 20px; font-weight: 700; flex-shrink: 0; }
+.verdict-card.HIGH   .v-prob { color: var(--danger);  }
+.verdict-card.MEDIUM .v-prob { color: var(--warning); }
+.verdict-card.LOW    .v-prob { color: var(--success); }
+
+/* Signals */
+.signals-section { padding: 0 16px 12px; }
+.section-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--mono); margin-bottom: 8px; }
+.signal-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.signal-row:last-child { border-bottom: none; }
+.sig-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.sig-dot.danger  { background: var(--danger);  box-shadow: 0 0 5px rgba(239,68,68,0.5); }
+.sig-dot.warning { background: var(--warning); }
+.sig-dot.safe    { background: var(--success); }
+.sig-dot.info    { background: #3B82F6; }
+.sig-text { font-size: 12px; color: #94A3B8; line-height: 1.4; }
+
+/* Features bar */
+.features-section { padding: 0 16px 12px; }
+.feat-row { margin-bottom: 8px; }
+.feat-header { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.feat-name { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.feat-val  { font-size: 11px; font-weight: 600; font-family: var(--mono); }
+.feat-track { height: 3px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.feat-fill  { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+.feat-fill.danger  { background: var(--danger); }
+.feat-fill.warning { background: var(--warning); }
+.feat-fill.safe    { background: var(--success); }
+
+/* Stats footer */
+.stats-bar {
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex; gap: 16px; align-items: center;
+}
+.stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.stat-val { font-size: 15px; font-weight: 700; font-family: var(--mono); }
+.stat-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.action-btns { margin-left: auto; display: flex; gap: 6px; }
+.btn {
+  font-size: 11px; padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg3);
+  color: var(--muted); cursor: pointer; font-family: var(--mono);
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--text); }
+.btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+.btn.primary:hover { background: #818CF8; }
+
+/* Tabs */
+.tab-bar {
+  display: flex; gap: 2px; padding: 8px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  font-size: 11px; padding: 5px 10px; border-radius: 6px 6px 0 0;
+  cursor: pointer; color: var(--muted); border: 1px solid transparent;
+  border-bottom: none; font-family: var(--mono); transition: all 0.15s;
+}
+.tab.active { background: var(--bg2); border-color: var(--border); color: var(--text); }
+.tab-body { padding: 12px 16px; display: none; }
+.tab-body.active { display: block; }
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-icon">🛡</div>
+  <div>
+    <div class="logo-text">PhishGuard Pro</div>
+    <div class="logo-sub">ML URL Protection v2.3</div>
+  </div>
+  <div class="scan-toggle">
+    <span class="toggle-lbl">Scan</span>
+    <label class="toggle">
+      <input type="checkbox" id="scanToggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- Verdict -->
+<div class="verdict-section">
+  <div class="verdict-card loading" id="verdictCard">
+    <div class="v-icon" id="vIcon">
+      <div class="spinner"></div>
+    </div>
+    <div class="v-body">
+      <div class="v-title" id="vTitle">Scanning...</div>
+      <div class="v-url"  id="vUrl">Analyzing current page</div>
+    </div>
+    <div class="v-prob" id="vProb"></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('signals')">Signals</div>
+  <div class="tab" onclick="switchTab('features')">Features</div>
+</div>
+
+<!-- Signals tab -->
+<div class="tab-body active" id="tab-signals">
+  <div class="section-label">// threat signals</div>
+  <div id="signalList">
+    <div style="color:var(--muted);font-size:12px">Loading...</div>
+  </div>
+</div>
+
+<!-- Features tab -->
+<div class="tab-body" id="tab-features">
+  <div class="section-label">// key features</div>
+  <div id="featList"></div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-val" id="sTotal" style="color:#818CF8">0</span>
+    <span class="stat-lbl">Scanned</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sPhish" style="color:#EF4444">0</span>
+    <span class="stat-lbl">Phishing</span>
+  </div>
+  <div class="stat">
+    <span class="stat-val" id="sSafe" style="color:#10B981">0</span>
+    <span class="stat-lbl">Safe</span>
+  </div>
+  <div class="action-btns">
+    <button class="btn" onclick="rescan()">↺ Rescan</button>
+    <button class="btn primary" onclick="openDashboard()">Dashboard</button>
+  </div>
+</div>
+
+<script>
+const TIER_ICONS    = { HIGH: "⚠", MEDIUM: "?", LOW: "✓", error: "✕" };
+const SIGNAL_DOT    = { danger: "danger", warning: "warning", safe: "safe", info: "info" };
+
+const KEY_FEATURES = [
+  { key: "url_entropy",             label: "URL Entropy",     max: 6   },
+  { key: "num_subdomains",          label: "Subdomains",      max: 5   },
+  { key: "sensitive_keyword_count", label: "Keywords",        max: 6   },
+  { key: "url_length",              label: "URL Length",      max: 200 },
+  { key: "typosquat_score",         label: "Typosquat Sim",   max: 1   },
+  { key: "host_entropy",            label: "Host Entropy",    max: 5   },
+];
+
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((t, i) =>
+    t.classList.toggle("active", ["signals","features"][i] === name));
+  document.querySelectorAll(".tab-body").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+}
+
+function renderVerdict(result) {
+  const tier = result.risk_tier;
+  const card = document.getElementById("verdictCard");
+  card.className = `verdict-card ${tier}`;
+  document.getElementById("vIcon").innerHTML  = TIER_ICONS[tier] || "?";
+  document.getElementById("vTitle").textContent = result.verdict;
+  document.getElementById("vUrl").textContent   = result.url.slice(0, 55);
+  document.getElementById("vProb").textContent  = `${(result.probability * 100).toFixed(1)}%`;
+
+  // Signals
+  const sigs = result.signals || [];
+  document.getElementById("signalList").innerHTML = sigs.map(s =>
+    `<div class="signal-row">
+       <div class="sig-dot ${SIGNAL_DOT[s.type] || 'info'}"></div>
+       <span class="sig-text">${s.msg}</span>
+     </div>`
+  ).join("") || '<div style="color:var(--muted);font-size:12px">No signals.</div>';
+
+  // Features
+  const feats = result.all_features || {};
+  document.getElementById("featList").innerHTML = KEY_FEATURES.map(f => {
+    const val = feats[f.key] ?? 0;
+    const pct = Math.min(val / f.max * 100, 100).toFixed(1);
+    const cls = pct > 65 ? "danger" : pct > 35 ? "warning" : "safe";
+    const disp = typeof val === "number" && val % 1 !== 0 ? val.toFixed(3) : val;
+    return `<div class="feat-row">
+      <div class="feat-header">
+        <span class="feat-name">${f.label}</span>
+        <span class="feat-val">${disp}</span>
+      </div>
+      <div class="feat-track">
+        <div class="feat-fill ${cls}" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderError(url) {
+  const card = document.getElementById("verdictCard");
+  card.className = "verdict-card error";
+  document.getElementById("vIcon").innerHTML  = "!";
+  document.getElementById("vTitle").textContent = "API Offline";
+  document.getElementById("vUrl").textContent   = "Start the Flask server on :5050";
+  document.getElementById("vProb").textContent  = "";
+  document.getElementById("signalList").innerHTML =
+    '<div class="signal-row"><div class="sig-dot warning"></div>' +
+    '<span class="sig-text">Cannot connect to PhishGuard API. Run: python backend/api/server.py</span></div>';
+}
+
+function updateStats(stats) {
+  if (!stats) return;
+  document.getElementById("sTotal").textContent = stats.scanned  || 0;
+  document.getElementById("sPhish").textContent = stats.phishing || 0;
+  document.getElementById("sSafe").textContent  = stats.safe     || 0;
+}
+
+async function rescan() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return;
+  document.getElementById("verdictCard").className = "verdict-card loading";
+  document.getElementById("vIcon").innerHTML  = '<div class="spinner"></div>';
+  document.getElementById("vTitle").textContent = "Rescanning...";
+  document.getElementById("vProb").textContent  = "";
+  chrome.runtime.sendMessage({ type: "SCAN_NOW", url: tab.url, tabId: tab.id }, (result) => {
+    if (result) renderVerdict(result);
+    else renderError(tab.url);
+  });
+}
+
+function openDashboard() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("../frontend/index.html") });
+}
+
+// ── On load ──────────────────────────────────────────────────────
+async function init() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return;
+
+  document.getElementById("vUrl").textContent = (tab.url || "").slice(0, 55);
+
+  // Get cached result from background
+  chrome.runtime.sendMessage({ type: "GET_RESULT", tabId: tab.id }, ({ result, stats }) => {
+    updateStats(stats);
+    if (result) {
+      renderVerdict(result);
+    } else {
+      // No cached result — request scan
+      chrome.runtime.sendMessage({ type: "SCAN_NOW", url: tab.url, tabId: tab.id }, (r) => {
+        if (r) renderVerdict(r);
+        else renderError(tab.url);
+      });
+    }
+  });
+
+  // Scan toggle sync
+  chrome.storage.sync.get({ scanEnabled: true }, ({ scanEnabled }) => {
+    document.getElementById("scanToggle").checked = scanEnabled;
+  });
+  document.getElementById("scanToggle").addEventListener("change", (e) => {
+    chrome.storage.sync.set({ scanEnabled: e.target.checked });
+  });
+}
+
+init();
+</script>
+</body>
+</html>

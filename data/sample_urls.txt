@@ -1,0 +1,26 @@
+# PhishGuard Pro — Sample URLs for batch testing
+# Usage: python cli.py --file data/sample_urls.txt
+
+# Legitimate
+https://google.com/search?q=machine+learning
+https://github.com/anthropics/claude
+https://stackoverflow.com/questions/tagged/python
+https://amazon.com/products/electronics
+https://netflix.com/browse
+https://stripe.com/docs/api
+https://linkedin.com/in/johndoe
+https://wikipedia.org/wiki/Phishing
+https://slack.com/signin
+https://dropbox.com/home
+
+# Phishing / Suspicious
+http://paypal-secure.login-verify.xyz/account/confirm?token=abc123
+http://192.168.1.1/admin/login?redirect=http%3A%2F%2Fevil.com
+http://paypal.secure.malicious-host.top/login
+http://g00gle.click/signin?steal=credentials
+http://netflix-update-billing.xyz/verify?user=you@email.com
+http://apple-id-suspended.online/account/unlock
+http://arnazon.com/billing/update
+http://microsoft-support-alert.live/fix-virus
+http://chase-bank-secure.xyz/verify-identity
+http://instagram-login-secure.click/auth?redirect=phish

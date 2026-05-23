@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  phishguard:
+    build: .
+    container_name: phishguard-pro
+    ports:
+      - "5050:5050"
+    environment:
+      - PORT=5050
+      - HOST=0.0.0.0
+    volumes:
+      - ./models:/app/models
+      - ./data:/app/data
+    restart: unless-stopped
